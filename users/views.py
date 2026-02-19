@@ -3,12 +3,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.conf import settings
 from django import forms
 from django.contrib import messages
-from .models import Post
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.db.models import Q
+from .models import Post, Message
 
 # Sizning formangiz (Email qo'shildi)
 class EasySignupForm(UserCreationForm):
@@ -131,3 +133,47 @@ def verify_email(request):
         else:
             messages.error(request, "Kod noto'g'ri!")
     return render(request, 'verify_email.html')
+
+
+
+
+
+def _chat_logic(request, other_user):
+    current_user = request.user
+
+    if other_user == current_user:
+        messages.warning(request, "O'zingiz bilan chat qila olmaysiz.")
+        return redirect('post_list')
+
+    chat_messages = Message.objects.filter(
+        Q(sender=current_user, recipient=other_user) |
+        Q(sender=other_user, recipient=current_user)
+    ).order_by('timestamp')
+
+    if request.method == 'POST':
+        text = request.POST.get('text')
+        if text:
+            Message.objects.create(
+                sender=current_user,
+                recipient=other_user,
+                text=text
+            )
+            return redirect(request.path)
+
+    return render(request, 'chat.html', {
+        'other_user': other_user,
+        'messages': chat_messages,
+    })
+
+@login_required
+def chat_view(request, user_id):
+    """Foydalanuvchi ID orqali chatga kirish"""
+    other_user = get_object_or_404(User, id=user_id)
+    return _chat_logic(request, other_user)
+
+@login_required
+def chat_view_post(request, post_id):
+    """Post orqali muallif bilan chatga kirish"""
+    post = get_object_or_404(Post, id=post_id)
+    return _chat_logic(request, post.author)
+

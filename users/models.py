@@ -24,3 +24,14 @@ class Post(models.Model):
 
     def __str__(self):
         return self.title
+
+
+
+
+class Message(models.Model):
+    sender = models.ForeignKey(User, related_name='sender', on_delete=models.CASCADE)
+    recipient = models.ForeignKey(User, related_name='recipient', on_delete=models.CASCADE)
+    text = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f'{self.sender} -> {self.recipient}'

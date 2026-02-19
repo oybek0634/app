@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Chat: {{ other_user.username }}</title>
+    <style>
+        /* Chat oynasining umumiy ko'rinishi */
+        .chat-container {
+            height: 65vh;
+            overflow-y: auto;
+            background: #f0f2f5;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        /* Xabarlar dizayni */
+        .message {
+            margin-bottom: 15px;
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        /* Yuborilgan xabarlar (Men) */
+        .sent {
+            background-color: #0084ff;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        /* Qabul qilingan xabarlar (Suhbatdosh) */
+        .received {
+            background-color: #ffffff;
+            color: #1c1e21;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .time {
+            font-size: 0.7rem;
+            opacity: 0.8;
+            display: block;
+            margin-top: 5px;
+            text-align: right;
+        }
+        .received .time { color: #65676b; text-align: left; }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-light text-primary rounded-circle d-flex justify-content-center align-items-center me-2" style="width: 35px; height: 35px; font-weight: bold;">
+                                {{ other_user.username|slice:":1"|upper }}
+                            </div>
+                            <h5 class="mb-0">{{ other_user.username }}</h5>
+                        </div>
+                        <a href="/" class="btn btn-sm btn-outline-light">Chiqish</a>
+                    </div>
+
+                    <div class="card-body chat-container" id="chatBox">
+                        {% for message in messages %}
+                            <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}">
+                                <div>{{ message.text }}</div>
+                                <span class="time">
+                                    {{ message.timestamp|date:"H:i" }}
+                                    {% if message.sender == request.user %} ✓{% endif %}
+                                </span>
+                            </div>
+                        {% empty %}
+                            <div class="text-center my-5">
+                                <p class="text-muted">Suhbatni boshlang...</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="card-footer bg-white border-top p-3">
+                        <form method="post" class="d-flex gap-2">
+                            {% csrf_token %}
+                            <input type="text" name="text" class="form-control rounded-pill px-3" placeholder="Xabaringizni yozing..." required autocomplete="off">
+                            <button type="submit" class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-send-fill" viewBox="0 0 16 16">
+                                  <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sahifa yuklanganda avtomatik eng pastga tushadi
+        window.onload = function() {
+            var chatBox = document.getElementById("chatBox");
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+    </script>
+</body>
+</html>

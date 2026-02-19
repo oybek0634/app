@@ -48,11 +48,20 @@
                     </h5>
                     <p class="card-text text-muted small">{{ post.content|truncatechars:120 }}</p>
                 </div>
-                <div class="card-footer bg-transparent border-0 d-flex justify-content-between text-muted small">
-                    <span>👤 {{ post.author.username }}</span>
-                    <span>{{ post.created_at|date:"d.m.Y" }}</span>
+
+                <div class="card-footer bg-transparent border-0">
+                    <div class="d-flex justify-content-between align-items-center text-muted small mb-2">
+                        <span>👤 {{ post.author.username }}</span>
+                        <span>{{ post.created_at|date:"d.m.Y" }}</span>
+                    </div>
+
+                    {% if user.is_authenticated and post.author != user %}
+                        <a href="{% url 'chat_view' post.author.id %}" class="btn btn-sm btn-outline-primary w-100">
+                            💬 Xabar yozish
+                        </a>
+                    {% endif %}
                 </div>
-            </div>
+                </div>
         </div>
         {% endfor %}
     </div>
