@@ -12,4 +12,8 @@ urlpatterns = [
     path('verify/', views.verify_email, name='verify_email'),
     path('chat/<int:user_id>/', views.chat_view, name='chat_view'),
     path('chat/post/<int:post_id>/', views.chat_view_post, name='chat_view_post'),
+    path('notifications/', views.notifications_view, name='notifications_view'),
+    path('notifications/<int:pk>/', views.notifications_view, name='notification_detail'),
+    path('favorites/', views.favorite_list, name='favorite_list'),
+    path('favorite/<int:post_id>/', views.favorite_post, name='favorite_post'),
 ]

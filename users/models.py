@@ -19,6 +19,7 @@ class Post(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='global')
+    favorites = models.ManyToManyField(User, related_name='favorite_posts', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -35,3 +36,13 @@ class Message(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return f'{self.sender} -> {self.recipient}'
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, related_name='notifications', on_delete=models.CASCADE)
+    sender = models.ForeignKey(User, related_name='sent_notifications', on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, related_name='notifications', on_delete=models.CASCADE)
+    is_read = models.BooleanField(default=False) # <--- BU JUDA MUHIM
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.sender} -> {self.user} ({self.post.title})'

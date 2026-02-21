@@ -10,7 +10,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q
-from .models import Post, Message
+from .models import Post, Message, Notification
+
 
 # Sizning formangiz (Email qo'shildi)
 class EasySignupForm(UserCreationForm):
@@ -135,21 +136,8 @@ def verify_email(request):
     return render(request, 'verify_email.html')
 
 
-
-
-
-def _chat_logic(request, other_user):
+def _chat_logic(request, other_user, post_obj=None, chat_messages=None):
     current_user = request.user
-
-    if other_user == current_user:
-        messages.warning(request, "O'zingiz bilan chat qila olmaysiz.")
-        return redirect('post_list')
-
-    chat_messages = Message.objects.filter(
-        Q(sender=current_user, recipient=other_user) |
-        Q(sender=other_user, recipient=current_user)
-    ).order_by('timestamp')
-
     if request.method == 'POST':
         text = request.POST.get('text')
         if text:
@@ -158,12 +146,17 @@ def _chat_logic(request, other_user):
                 recipient=other_user,
                 text=text
             )
+            if post_obj:
+                Notification.objects.create(
+                    user=other_user,
+                    sender=current_user,
+                    post=post_obj
+                )
             return redirect(request.path)
-
     return render(request, 'chat.html', {
         'other_user': other_user,
         'messages': chat_messages,
-    })
+})
 
 @login_required
 def chat_view(request, user_id):
@@ -177,3 +170,52 @@ def chat_view_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     return _chat_logic(request, post.author)
 
+
+
+
+@login_required
+def notifications_view(request, pk=None):
+    if pk:
+        notification = get_object_or_404(
+            Notification,
+            pk=pk,
+            user=request.user
+        )
+
+        notification.is_read = True
+        notification.save()
+
+        return redirect('post_detail', pk=notification.post.id)
+
+    notifications = Notification.objects.filter(
+        user=request.user
+    ).order_by('-timestamp')
+
+    unread_count = notifications.filter(is_read=False).count()
+
+    return render(request, 'bildirishnoma.html', {
+        'notifications': notifications,
+        'unread_count': unread_count
+    })
+
+
+def favorite_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+
+    if request.user in post.favorites.all():
+        post.favorites.remove(request.user)
+    else:
+        post.favorites.add(request.user)
+        if post.author != request.user:
+            Notification.objects.create(
+                user=post.author,
+                sender=request.user,
+                post=post,
+            )
+
+    return redirect(request.META.get('HTTP_REFERER', 'post_list'))
+
+@login_required
+def favorite_list(request):
+    user_favorites = request.user.favorite_posts.all()
+    return render(request, 'favorites.html', {'posts': user_favorites})
